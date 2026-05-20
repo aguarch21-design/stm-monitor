@@ -1,1 +1,1 @@
-# stm-monito
+# stm-monitor
