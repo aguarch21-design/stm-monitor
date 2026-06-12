@@ -195,6 +195,7 @@ td.mono{font-family:'DM Mono',monospace;font-size:12px;}
       </button>
       <select class="auto-select" id="auto-select" onchange="toggleAuto()">
         <option value="0">Auto: OFF</option>
+        <option value="10">Cada 10s</option>
         <option value="30">Cada 30s</option>
         <option value="60">Cada 1 min</option>
         <option value="120">Cada 2 min</option>
@@ -627,41 +628,33 @@ function toggleControles(){
 
 function exportCSV(){
   if(!allData.length){alert('No hay datos para exportar.');return;}
-  var EMPRESAS_N={10:'COETC',20:'COME',50:'CUTCSA',70:'UCOT'};
-  var headers = ['Fecha','Hora','Linea','Empresa','Bus','Variante','Estado','Atraso_min','Punto_control','Hora_teorica','Dist_control_m','Lat','Lng','Senal_ms'];
-  var now = new Date();
-  var fecha = now.toLocaleDateString('es-UY');
-  var hora = now.toLocaleTimeString('es-UY');
-  var rows = allData.map(function(f){
-    var p = f.properties;
-    var cat = f._cat;
-    var labels = {ok:'En horario', late:'Atrasado', early:'Adelantado', bad:'Fuera de hora', ng:'Sin GPS'};
-    var coords = f.geometry ? f.geometry.coordinates : [null,null];
-    return [
-      fecha,
-      hora,
-      p.linea||'',
-      EMPRESAS_N[p.empresa]||p.empresa||'',
-      p.codigoBus||'',
-      p.variante||'',
-      labels[cat]||cat,
-      p._atraso_min!==null&&p._atraso_min!==undefined ? p._atraso_min : '',
-      p._control||'',
-      p._hora_teorica||'',
-      p._dist_m||'',
-      coords[1]||'',
-      coords[0]||'',
-      p.frecuencia||''
-    ].map(function(v){return '+String(v).replace(/"/g,"")+';}).join(',');
+  var EN={10:'COETC',20:'COME',50:'CUTCSA',70:'UCOT'};
+  var headers=['Fecha','Hora','Linea','Empresa','Bus','Variante','Estado','Atraso_min','Punto_control','Hora_teorica','Dist_control_m','Lat','Lng','Senal_ms'];
+  var now=new Date();
+  var fecha=now.toLocaleDateString('es-UY');
+  var hora=now.toLocaleTimeString('es-UY');
+  var rows=allData.map(function(f){
+    var p=f.properties,cat=f._cat;
+    var lb={ok:'En horario',late:'Atrasado',early:'Adelantado',bad:'Fuera de hora',ng:'Sin GPS'};
+    var c=f.geometry?f.geometry.coordinates:[null,null];
+    var vals=[
+      fecha,hora,p.linea||'',EN[p.empresa]||p.empresa||'',
+      p.codigoBus||'',p.variante||'',lb[cat]||cat,
+      (p._atraso_min!==null&&p._atraso_min!==undefined)?p._atraso_min:'',
+      p._control||'',p._hora_teorica||'',p._dist_m||'',
+      c[1]||'',c[0]||'',p.frecuencia||''
+    ];
+    return vals.map(function(v){
+      var s=String(v).replace(/"/g,'""');
+      return '"'+s+'"';
+    }).join(',');
   });
-  var csv = [headers.join(',')].concat(rows).join('\n');
-  var blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'buses-stm-'+now.toISOString().slice(0,16).replace('T','-').replace(':','')+'.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  var csv=[headers.join(',')].concat(rows).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='buses-stm-'+now.toISOString().slice(0,16).replace('T','-').replace(/:/g,'')+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
 function focusBus(lat,lng){if(map&&lat&&lng)map.setView([lat,lng],16);}
