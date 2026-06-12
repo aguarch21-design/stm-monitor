@@ -7,6 +7,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Supabase config
+const SUPABASE_URL = 'https://zqwhzzzahzvodrpduxkd.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || '';
+
 // Load STM data (controles + horarios)
 let STM_DATA = null;
 try {
@@ -37,27 +41,25 @@ function calcDelay(linea, busLat, busLon) {
     const d = distM(busLat, busLon, c.la, c.lo);
     if (d < minDist) { minDist = d; nearest = c; }
   }
-  if (minDist > 500) return null; // solo si está a menos de 500m del punto de control
+  if (minDist > 500) return null;
 
   // Get current time in Uruguay (UTC-3)
   const now = new Date();
   const nowSeg = ((now.getUTCHours() - 3 + 24) % 24) * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds();
-  const wd = new Date(now.getTime() - 3*3600*1000).getUTCDay(); // 0=sun,6=sat
-  const day = (wd === 0) ? '2' : (wd === 6) ? '1' : '0';
+  const wd = new Date(now.getTime() - 3*3600*1000).getUTCDay();
+  const tipoDia = (wd === 0) ? '3' : (wd === 6) ? '2' : '1';
 
   const lineaHor = STM_DATA.horarios[linea];
   if (!lineaHor) return null;
-  const dayHor = lineaHor[day];
+  const dayHor = lineaHor[tipoDia];
   if (!dayHor) return null;
   const horas = dayHor[nearest.c];
   if (!horas || !horas.length) return null;
 
-  // Solo considerar horarios dentro de ±30 minutos de la hora actual
-  const VENTANA = 30 * 60; // 30 minutos en segundos
+  const VENTANA = 30 * 60;
   const horasFiltradas = horas.filter(h => Math.abs(h - nowSeg) <= VENTANA);
-  if (!horasFiltradas.length) return null; // ningún servicio en la ventana de tiempo
+  if (!horasFiltradas.length) return null;
 
-  // Find closest scheduled time within window
   let closest = horasFiltradas[0], minDiff = Infinity;
   for (const h of horasFiltradas) {
     const diff = Math.abs(h - nowSeg);
@@ -72,6 +74,7 @@ function calcDelay(linea, busLat, busLon) {
     atraso_seg: atrasoSeg,
     atraso_min: Math.round(atrasoSeg/60*10)/10,
     control: nearest.d,
+    control_cod: nearest.c,
     dist_m: Math.round(minDist),
     hora_teorica: `${hh}:${mm}`
   };
@@ -83,10 +86,8 @@ function classifyBus(feature) {
   const fr = p.frecuencia;
   const coords = feature.geometry ? feature.geometry.coordinates : null;
 
-  // No GPS
   if (!fr || fr > 300000) return { cat: 'ng', atraso_min: null, control: null, hora_teorica: null };
 
-  // Try to calculate real delay
   if (coords && p.linea && STM_DATA) {
     const delay = calcDelay(String(p.linea), coords[1], coords[0]);
     if (delay !== null) {
@@ -95,13 +96,45 @@ function classifyBus(feature) {
       if (Math.abs(a) <= 2) cat = 'ok';
       else if (a > 2) cat = 'late';
       else cat = 'early';
-      return { cat, atraso_min: a, control: delay.control, hora_teorica: delay.hora_teorica, dist_m: delay.dist_m };
+      return { cat, atraso_min: a, control: delay.control, control_cod: delay.control_cod, hora_teorica: delay.hora_teorica, dist_m: delay.dist_m };
     }
   }
 
-  // Fallback to frecuencia
   if (fr > 2*60*1000) return { cat: 'bad', atraso_min: null, control: null, hora_teorica: null };
   return { cat: 'ok', atraso_min: null, control: null, hora_teorica: null };
+}
+
+// Save snapshot to Supabase
+async function saveToSupabase(buses) {
+  if (!SUPABASE_KEY) return;
+  try {
+    const now = new Date().toISOString();
+    const rows = buses.map(f => ({
+      timestamp: now,
+      coche: f.properties.codigoBus,
+      linea: f.properties.linea,
+      empresa: f.properties.empresa,
+      estado: f.properties._cat,
+      atraso_min: f.properties._atraso_min,
+      control: f.properties._control,
+      hora_teorica: f.properties._hora_teorica,
+      lat: f.geometry ? f.geometry.coordinates[1] : null,
+      lng: f.geometry ? f.geometry.coordinates[0] : null
+    }));
+
+    await fetch(`${SUPABASE_URL}/rest/v1/bus_snapshots`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(rows)
+    });
+  } catch(e) {
+    console.log('Supabase error:', e.message);
+  }
 }
 
 // Main API endpoint
@@ -114,7 +147,6 @@ app.post('/api/buses', async (req, res) => {
     });
     const data = await r.json();
 
-    // Enrich features with delay info
     if (data.features) {
       for (const f of data.features) {
         const info = classifyBus(f);
@@ -124,6 +156,8 @@ app.post('/api/buses', async (req, res) => {
         f.properties._hora_teorica = info.hora_teorica;
         f.properties._dist_m = info.dist_m;
       }
+      // Save to Supabase async (no await - no block response)
+      saveToSupabase(data.features);
     }
 
     res.json(data);
@@ -136,7 +170,7 @@ app.post('/api/buses', async (req, res) => {
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'reporte-buses-stm.html')));
 app.get('/reporte-buses-stm.html', (req, res) => res.sendFile(path.join(__dirname, 'reporte-buses-stm.html')));
 
-// Health check endpoint to prevent sleeping
+// Health check
 app.get('/health', (req, res) => res.json({status: 'ok', time: new Date().toISOString()}));
 
 app.listen(process.env.PORT || 3001, () => console.log('STM server running'));
