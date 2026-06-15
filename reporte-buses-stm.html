@@ -108,7 +108,78 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);heigh
 
 /* BODY */
 .body{flex:1;display:grid;grid-template-columns:1fr 360px;overflow:hidden;}
-@media(max-width:860px){.body{grid-template-columns:1fr;}}
+/* MOBILE RESPONSIVE */
+@media(max-width:860px){
+  body{font-size:13px;}
+  
+  /* Topbar mobile */
+  .topbar{padding:0.5rem 0.75rem;gap:6px;}
+  .topbar-center{order:3;width:100%;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;}
+  .proxy-url-inp{width:180px;min-width:120px;font-size:11px;}
+  .brand{font-size:10px;}
+  .ts{display:none;}
+  .btn-sm{font-size:11px;padding:3px 8px;}
+  .auto-select{font-size:11px;}
+  .auto-badge{display:none;}
+  
+  /* Metrics mobile - scroll horizontal */
+  .metrics{grid-template-columns:repeat(5,minmax(80px,1fr));gap:5px;padding:0.5rem 0.75rem;overflow-x:auto;}
+  .metric{padding:0.5rem 0.5rem;border-radius:8px;}
+  .metric .val{font-size:16px;}
+  .metric .lbl{font-size:9px;}
+  .metric .sub{font-size:9px;}
+  
+  /* Filters mobile */
+  .filters-bar{padding:0.4rem 0.75rem;gap:6px;flex-wrap:nowrap;overflow-x:auto;}
+  .fsel{font-size:11px;padding:4px 6px;}
+  .fsearch{width:100px;font-size:11px;}
+  .fcount{display:none;}
+  
+  /* Body mobile - tabs instead of side by side */
+  .body{grid-template-columns:1fr;grid-template-rows:1fr;position:relative;}
+  
+  /* Map takes full screen on mobile */
+  .map-area{height:calc(100vh - 200px);}
+  
+  /* Table panel becomes bottom sheet */
+  .table-panel{
+    position:fixed;
+    bottom:0;left:0;right:0;
+    height:45vh;
+    border-left:none;
+    border-top:1px solid var(--bd2);
+    border-radius:16px 16px 0 0;
+    z-index:500;
+    background:var(--bg);
+    transform:translateY(calc(100% - 40px));
+    transition:transform 0.3s ease;
+  }
+  .table-panel.expanded{transform:translateY(0);}
+  .tp-head{
+    cursor:pointer;
+    border-radius:16px 16px 0 0;
+    padding:0.75rem 1rem;
+  }
+  .tp-head::before{
+    content:'';display:block;width:36px;height:4px;
+    background:var(--bd2);border-radius:2px;
+    margin:0 auto 0.5rem;
+  }
+  
+  /* State filter mobile */
+  .state-filter{bottom:50px;font-size:11px;padding:4px 6px;gap:2px;}
+  .sf-btn{padding:4px 8px;font-size:11px;}
+  
+  /* Hide export button on mobile */
+  .filters-bar button{display:none;}
+}
+
+@media(max-width:480px){
+  .metrics{grid-template-columns:repeat(5,minmax(60px,1fr));}
+  .metric .val{font-size:14px;}
+  .proxy-url-inp{display:none;}
+  .btn-refresh span{display:none;}
+}
 
 /* MAP */
 .map-area{position:relative;overflow:hidden;}
@@ -276,7 +347,7 @@ td.mono{font-family:'DM Mono',monospace;font-size:12px;}
     </div>
 
     <div class="table-panel">
-      <div class="tp-head">
+      <div class="tp-head" onclick="toggleTablePanel()">
         <span class="tp-title" id="tp-title">Todos los buses</span>
         <span class="tp-count" id="tp-count"></span>
       </div>
@@ -658,6 +729,11 @@ function exportCSV(){
 }
 
 function focusBus(lat,lng){if(map&&lat&&lng)map.setView([lat,lng],16);}
+
+function toggleTablePanel(){
+  var panel = document.querySelector('.table-panel');
+  if(panel) panel.classList.toggle('expanded');
+}
 
 function resetDashboard(){
   clearAuto();
