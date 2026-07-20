@@ -152,7 +152,7 @@ const STMLogic = (function () {
    */
   async function fetchBuses() {
     const STM_URL = 'https://www.montevideo.gub.uy/buses/rest/stm-online';
-    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(STM_URL), {
+    const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(STM_URL), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({})
