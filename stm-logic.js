@@ -151,7 +151,8 @@ const STMLogic = (function () {
    * @returns {Promise<Object>} GeoJSON con features enriquecidas
    */
   async function fetchBuses() {
-    const res = await fetch('https://www.montevideo.gub.uy/buses/rest/stm-online', {
+    const STM_URL = 'https://www.montevideo.gub.uy/buses/rest/stm-online';
+    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(STM_URL), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({})
