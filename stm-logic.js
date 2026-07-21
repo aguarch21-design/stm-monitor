@@ -151,8 +151,7 @@ const STMLogic = (function () {
    * @returns {Promise<Object>} GeoJSON con features enriquecidas
    */
   async function fetchBuses() {
-    const STM_URL = 'https://www.montevideo.gub.uy/buses/rest/stm-online';
-    const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(STM_URL), {
+    const res = await fetch('https://old-mountain-eebd.aguarch21.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({})
