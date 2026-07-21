@@ -1,4 +1,4 @@
-const CACHE = 'stm-buses-v1';
+const CACHE = 'stm-buses-v2';
 const ASSETS = [
   '/stm-monitor/reporte-buses-stm.html',
   '/stm-monitor/stm-logic.js',
