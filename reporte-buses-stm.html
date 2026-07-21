@@ -194,7 +194,6 @@ td.mono{font-family:'DM Mono',monospace;font-size:12px;}
       </button>
       <select class="auto-select" id="auto-select" onchange="toggleAuto()">
         <option value="0">Auto: OFF</option>
-        <option value="10">Cada 10s</option>
         <option value="30">Cada 30s</option>
         <option value="60">Cada 1 min</option>
         <option value="120">Cada 2 min</option>
@@ -675,5 +674,12 @@ function resetDashboard(){
   if(layerGroup)layerGroup.clearLayers();
 }
 </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/stm-monitor/sw.js')
+        .then(() => console.log('[SW] Registrado'))
+        .catch(e => console.warn('[SW] Error:', e));
+    }
+  </script>
 </body>
 </html>
