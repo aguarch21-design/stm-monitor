@@ -3,18 +3,19 @@
   "short_name": "STM Buses",
   "description": "Monitor de buses en tiempo real — STM Montevideo",
   "start_url": "/stm-monitor/reporte-buses-stm.html",
+  "scope": "/stm-monitor/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#003DA5",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/stm-monitor/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "/stm-monitor/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
