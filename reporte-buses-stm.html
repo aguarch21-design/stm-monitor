@@ -3,6 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#003DA5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="STM Buses">
+  <link rel="manifest" href="/stm-monitor/manifest.json">
+  <link rel="apple-touch-icon" href="/stm-monitor/icon-192.png">
 <title>Reporte STM — Buses Montevideo</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="stm-logic.js"></script>
@@ -674,6 +681,13 @@ function resetDashboard(){
   if(layerGroup)layerGroup.clearLayers();
 }
 </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/stm-monitor/sw.js')
+        .then(() => console.log('[SW] Registrado'))
+        .catch(e => console.warn('[SW] Error:', e));
+    }
+  </script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/stm-monitor/sw.js')
